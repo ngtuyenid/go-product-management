@@ -11,6 +11,7 @@ import (
 	"github.com/thanhnguyen/product-api/internal/business/usecase"
 	"github.com/thanhnguyen/product-api/internal/config"
 	"github.com/thanhnguyen/product-api/internal/storage/cache"
+	"github.com/thanhnguyen/product-api/internal/storage/elasticsearch"
 	"github.com/thanhnguyen/product-api/internal/storage/postgres"
 	transportHttp "github.com/thanhnguyen/product-api/internal/transport/http"
 	"github.com/thanhnguyen/product-api/pkg/logger"
@@ -45,13 +46,17 @@ func main() {
 
 	// Create caches
 	statsCache := cache.NewStatsCache(log)
-
+	wsHub := transportHttp.NewWebSocketHub()
 	// Create use cases
-	productUseCase := usecase.NewProductUseCase(productRepo, categoryRepo, log, 5*time.Minute)
-	statsUseCase := usecase.NewStatsUseCase(productRepo, categoryRepo, nil, nil, statsCache, log, 15*time.Minute)
+	productSearch, err := elasticsearch.NewProductSearch(cfg.Elasticsearch.URL)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to create product search")
+	}
+	productUseCase := usecase.NewProductUseCase(productRepo, categoryRepo, log, 5*time.Minute, productSearch)
+	statsUseCase := usecase.NewStatsUseCase(productRepo, categoryRepo, nil, nil, statsCache, log, 15*time.Minute, wsHub)
 
 	// Create HTTP server
-	server := transportHttp.NewServer(cfg, log, productUseCase, statsUseCase)
+	server := transportHttp.NewServer(cfg, log, productUseCase, statsUseCase, wsHub)
 
 	// Start server in a goroutine
 	go func() {

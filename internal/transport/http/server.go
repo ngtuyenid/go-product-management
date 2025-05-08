@@ -25,6 +25,7 @@ type Server struct {
 	errorHandler   *middleware.ErrorHandler
 	productHandler *ProductHandler
 	statsHandler   *StatsHandler
+	wsHub          *WebSocketHub
 }
 
 // NewServer creates a new HTTP server
@@ -33,6 +34,7 @@ func NewServer(
 	logger *logger.Logger,
 	productUseCase usecase.ProductUseCase,
 	statsUseCase usecase.StatsUseCase,
+	wsHub *WebSocketHub,
 ) *Server {
 	// Set Gin mode
 	if config.Environment == "production" {
@@ -54,6 +56,7 @@ func NewServer(
 		},
 		config: config,
 		logger: logger,
+		wsHub:  wsHub,
 	}
 
 	// Initialize error handler
@@ -102,6 +105,9 @@ func NewServer(
 
 	// Register routes
 	server.registerRoutes()
+
+	// Đăng ký route WebSocket
+	server.router.GET("/ws/notifications", wsHub.HandleWS)
 
 	return server
 }

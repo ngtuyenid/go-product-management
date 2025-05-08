@@ -8,6 +8,7 @@ import (
 	"github.com/thanhnguyen/product-api/internal/business/entity"
 	"github.com/thanhnguyen/product-api/internal/storage"
 	"github.com/thanhnguyen/product-api/internal/storage/cache"
+	transportHttp "github.com/thanhnguyen/product-api/internal/transport/http"
 	"github.com/thanhnguyen/product-api/pkg/logger"
 )
 
@@ -31,6 +32,7 @@ type statsUseCase struct {
 	refreshTimeout time.Duration
 	lastRefresh    time.Time
 	mutex          sync.RWMutex
+	wsHub          *transportHttp.WebSocketHub
 }
 
 // NewStatsUseCase creates a new StatsUseCase
@@ -42,6 +44,7 @@ func NewStatsUseCase(
 	cache *cache.StatsCache,
 	logger *logger.Logger,
 	refreshTimeout time.Duration,
+	wsHub *transportHttp.WebSocketHub,
 ) StatsUseCase {
 	// Create the use case
 	uc := &statsUseCase{
@@ -52,6 +55,7 @@ func NewStatsUseCase(
 		cache:          cache,
 		logger:         logger,
 		refreshTimeout: refreshTimeout,
+		wsHub:          wsHub,
 	}
 
 	// Do an initial refresh
@@ -327,5 +331,9 @@ func (uc *statsUseCase) RefreshStats(ctx context.Context) error {
 	uc.lastRefresh = time.Now()
 
 	uc.logger.Info("Statistics refreshed")
+
+	// Broadcast stats update
+	uc.wsHub.Broadcast([]byte(`{"event":"stats_update","data":...}`))
+
 	return nil
 }

@@ -39,14 +39,44 @@ func main() {
 	}
 
 	// Connect to the database
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+
+	dbPort := os.Getenv("DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+
+	dbUsername := os.Getenv("DB_USERNAME")
+	if dbUsername == "" {
+		dbUsername = "postgres"
+	}
+
+	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		dbPassword = "postgres"
+	}
+
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = "product_api"
+	}
+
+	dbSSLMode := os.Getenv("DB_SSL_MODE")
+	if dbSSLMode == "" {
+		dbSSLMode = "disable"
+	}
+
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USERNAME"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_SSL_MODE"),
+		dbHost,
+		dbPort,
+		dbUsername,
+		dbPassword,
+		dbName,
+		dbSSLMode,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -204,7 +234,12 @@ func loadMigrations(dir string, down bool) ([]Migration, error) {
 		migrations = append(migrations, Migration{
 			Name: name,
 			Path: path,
-			Type: down ? "down" : "up",
+			Type: func() string {
+				if down {
+					return "down"
+				}
+				return "up"
+			}(),
 		})
 
 		return nil
@@ -221,4 +256,4 @@ func contains(slice []string, value string) bool {
 		}
 	}
 	return false
-} 
+}

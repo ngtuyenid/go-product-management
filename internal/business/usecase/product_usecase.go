@@ -7,6 +7,7 @@ import (
 
 	"github.com/thanhnguyen/product-api/internal/business/entity"
 	"github.com/thanhnguyen/product-api/internal/storage"
+	"github.com/thanhnguyen/product-api/internal/storage/elasticsearch"
 	"github.com/thanhnguyen/product-api/pkg/logger"
 )
 
@@ -17,14 +18,16 @@ type ProductUseCase interface {
 	GetProduct(ctx context.Context, id uint) (*entity.Product, error)
 	UpdateProduct(ctx context.Context, product *entity.Product, categoryIDs []uint) error
 	DeleteProduct(ctx context.Context, id uint) error
+	SearchProductsByDescription(ctx context.Context, desc string) ([]entity.Product, error)
 }
 
 // productUseCase implements ProductUseCase
 type productUseCase struct {
-	productRepo  storage.ProductRepository
-	categoryRepo storage.CategoryRepository
-	logger       *logger.Logger
-	cacheTimeout time.Duration
+	productRepo   storage.ProductRepository
+	categoryRepo  storage.CategoryRepository
+	logger        *logger.Logger
+	cacheTimeout  time.Duration
+	productSearch *elasticsearch.ProductSearch
 }
 
 // NewProductUseCase creates a new ProductUseCase
@@ -33,6 +36,7 @@ func NewProductUseCase(
 	categoryRepo storage.CategoryRepository,
 	logger *logger.Logger,
 	cacheTimeout time.Duration,
+	productSearch *elasticsearch.ProductSearch,
 ) ProductUseCase {
 	return &productUseCase{
 		productRepo:  productRepo,
@@ -155,4 +159,20 @@ func validateProduct(product *entity.Product) error {
 		return errors.New("product stock quantity cannot be negative")
 	}
 	return nil
+}
+
+func (uc *productUseCase) SearchProductsByDescription(ctx context.Context, desc string) ([]entity.Product, error) {
+	results, err := uc.productSearch.SearchByDescription(ctx, desc)
+	if err != nil {
+		return nil, err
+	}
+	var products []entity.Product
+	for _, p := range results {
+		products = append(products, entity.Product{
+			ID:          p.ID,
+			Name:        p.Name,
+			Description: p.Description,
+		})
+	}
+	return products, nil
 }

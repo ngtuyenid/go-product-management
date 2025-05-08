@@ -13,13 +13,14 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Environment string
-	Server      ServerConfig
-	Database    DatabaseConfig
-	JWT         JWTConfig
-	CORS        CORSConfig
-	RateLimit   RateLimitConfig
-	Logger      LoggerConfig
+	Environment   string
+	Server        ServerConfig
+	Database      DatabaseConfig
+	JWT           JWTConfig
+	CORS          CORSConfig
+	RateLimit     RateLimitConfig
+	Logger        LoggerConfig
+	Elasticsearch ElasticsearchConfig
 }
 
 // ServerConfig holds server-specific configuration
@@ -72,6 +73,11 @@ type LoggerConfig struct {
 	Level      string
 	Format     string
 	OutputPath string
+}
+
+// ElasticsearchConfig holds Elasticsearch configuration
+type ElasticsearchConfig struct {
+	URL string
 }
 
 // LoadConfig loads configuration from environment variables

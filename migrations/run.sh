@@ -65,12 +65,16 @@ if ! command -v go &> /dev/null; then
     exit 1
 fi
 
+# Get the project root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 # Build the migration tool
 echo "Building migration tool..."
-go build -o ./migrate ../cmd/migrate/main.go
+go build -o "$SCRIPT_DIR/migrate_tool" "$PROJECT_ROOT/cmd/migrate/main.go"
 
 # Set migration command options
-CMD="./migrate"
+CMD="$SCRIPT_DIR/migrate_tool"
 if [ "$DOWN" = true ]; then
     CMD="$CMD -down"
 fi
@@ -84,6 +88,8 @@ echo "Running migrations..."
 $CMD
 
 # Remove the migration binary
-rm ./migrate
+rm "$SCRIPT_DIR/migrate_tool"
 
-echo "Migration complete!" 
+echo "Migration complete!"
+
+go get github.com/gorilla/websocket

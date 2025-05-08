@@ -184,6 +184,22 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
 }
 
+func (h *ProductHandler) SearchProductsByDescription(c *gin.Context) {
+	desc := c.Query("query")
+	if desc == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing query parameter"})
+		return
+	}
+	products, err := h.productUseCase.SearchProductsByDescription(c.Request.Context(), desc)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to search products")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search products"})
+		return
+	}
+	// TODO Convert to response DTO if needed
+	c.JSON(http.StatusOK, products)
+}
+
 // RegisterRoutes registers the product routes
 func (h *ProductHandler) RegisterRoutes(router *gin.RouterGroup) {
 	products := router.Group("/products")
@@ -193,5 +209,6 @@ func (h *ProductHandler) RegisterRoutes(router *gin.RouterGroup) {
 		products.GET("/:id", h.GetProduct)
 		products.PUT("/:id", h.UpdateProduct)
 		products.DELETE("/:id", h.DeleteProduct)
+		products.GET("/search", h.SearchProductsByDescription)
 	}
 }
